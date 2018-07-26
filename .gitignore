@@ -1,5 +1,9 @@
 *.iso
 *.arc
 *.rarc
-testing/*
+*.a
 testing/
+*.cmake
+CMakeCache.txt
+CMakeFiles/
+Makefile
