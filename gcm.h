@@ -1,17 +1,17 @@
-#include <stdio.h>
+#include "endian.h"
 
 typedef struct {
 	struct {
-		u_int32_t flags : 8;
-		u_int32_t nameOffset : 24;
+		u32 flags : 8;
+		u32 nameOffset : 24;
 	};
 	union{
-		u_int32_t fileOffset;
-		u_int32_t parentOffset;
+		u32 fileOffset;
+		u32 parentOffset;
 	};
 	union {
-		u_int32_t fileLength;
-		u_int32_t nextOffset;
+		u32 fileLength;
+		u32 nextOffset;
 	};
 } gcmFst;
 
@@ -19,7 +19,7 @@ typedef struct {
 
 	FILE* stream;
 	gcmFst* fst;
-	u_int32_t fstEntryCount;
+	uint32_t fstEntryCount;
 
 } gcmHandle;
 

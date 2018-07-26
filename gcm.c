@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include "gcm.h"
-#include "endian.h"
-
-#define OffsetPointer(ptr, offset) ((void*)((char *)(ptr) + (offset)))
 
 void gcmOpenROM(gcmHandle* handle, char* path){
 	handle->stream = fopen(path, "rb");

@@ -1,14 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include "endian.h"
 
 typedef struct {
 	char magic[4];
-	u_int32_t decodedSize;
-	u_int32_t linkOffset;
-	u_int32_t chunkOffset;
+	u32 decodedSize;
+	u32 linkOffset;
+	u32 chunkOffset;
 	//TODO: flag table?
 } yayHeader;
 

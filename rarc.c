@@ -1,14 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#ifdef _WIN32
-#include <io.h>
-#else __linux__
-#include <unistd.h>
-#endif
-
-#include <sys/stat.h>
 #include "endian.h"
 #include "rarc.h"
 
