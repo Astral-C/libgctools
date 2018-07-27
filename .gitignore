@@ -7,3 +7,4 @@ testing/
 CMakeCache.txt
 CMakeFiles/
 Makefile
+*.vcxproj*
