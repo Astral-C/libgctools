@@ -1,9 +1,10 @@
+*.a
+a.out
 *.iso
 *.arc
 *.rarc
-*.a
-testing/
 *.cmake
+Makefile
 CMakeCache.txt
 CMakeFiles/
-Makefile
+.vscode/
