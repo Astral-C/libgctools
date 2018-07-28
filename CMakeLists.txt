@@ -1,2 +1,4 @@
-# CMake instructions to make the static lib
-ADD_LIBRARY( gctools STATIC endian.c rarc.c gcm.c )
+file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+file(GLOB_RECURSE INC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+add_library(GCTools STATIC ${SRC_FILES} ${INC_FILES})
+target_include_directories(GCTools PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
