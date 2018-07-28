@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 #define u32 uint32_t
 #define u16 uint16_t
