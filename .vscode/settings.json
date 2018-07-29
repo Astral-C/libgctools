@@ -1,7 +1,0 @@
-{
-    "C_Cpp.dimInactiveRegions": false,
-    "files.associations": {
-        "types.h": "c"
-    },
-    "C_Cpp.errorSquiggles": "Disabled"
-}

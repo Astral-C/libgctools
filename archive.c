@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include "types.h"
+#include "stream.h"
 #include "archive.h"
 
 GCerror gcInitArchive(GCarchive * arc, const GCcontext * ctx){
@@ -6,10 +8,13 @@ GCerror gcInitArchive(GCarchive * arc, const GCcontext * ctx){
 }
 
 GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
-    size_t mPosition = 8; //we start reading at 0x08
-    uint32_t fsOffset = *((uint32_t*)OffsetPointer(ptr, mPosition));
-    uint32_t fsSize = *((uint32_t*)OffsetPointer(ptr, mPosition+4));
-    mPosition = fsOffset;
+    GCstream stream;
 
+    gcInitStream(arc->ctx, &stream, ptr, sz, GC_ENDIAN_BIG);
+    gcStreamSeek(&stream, 8, 0);
+    GCuint32 fsOffset = gcStreamReadU32(&stream);
+    GCuint32 fsSize = gcStreamReadU32(&stream);
 
+    printf("FS Offset: %x : FS Size %x\n", fsOffset, fsSize);
+    return GC_ERROR_SUCCESS;
 }

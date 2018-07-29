@@ -39,7 +39,7 @@ typedef enum {
 
 	GC_ERROR_SUCCESS,
 	GC_ERROR_NULL_CONTEXT,
-
+	GC_ERROR_STREAM_OOB,
 	// put error codes here with the prefix 'GC_ERROR_'
 
 } GCerror;
@@ -54,8 +54,8 @@ const char * gcGetErrorMessage(GCerror err);
 // -------------------------------------------------------------------------- //
 
 //For internal library use only
-GCuint32 GCswapU32(GCuint32 n);
-GCuint16 GCswapU16(GCuint16 n);
+GCuint32 gcSwap32(GCuint32 n);
+GCuint16 gcSwap16(GCuint16 n);
 
 #ifdef __cplusplus
 }

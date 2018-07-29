@@ -1,5 +1,4 @@
 *.a
-a.out
 *.iso
 *.arc
 *.rarc
@@ -8,3 +7,4 @@ Makefile
 CMakeCache.txt
 CMakeFiles/
 .vscode/
+a.out
