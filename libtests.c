@@ -24,7 +24,8 @@ int main(int argc, char* argv[]){
 	
 	void* file = malloc(size);
 	fread(file, 1, size, f);
-	
+
+	gcInitArchive(&archive, &ctx);
 	if((err = gcLoadArchive(&archive, file, size)) != GC_ERROR_SUCCESS){
 		printf("Error Loading Archive: %s\n", gcGetErrorMessage(err));
 	}
