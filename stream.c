@@ -17,6 +17,7 @@ GCerror gcStreamSeek(GCstream* stream, GCuint32 pos, GCuint32 from){
         return GC_ERROR_STREAM_OOB;
     }
     stream->position = from + pos;
+    return GC_ERROR_SUCCESS;
 }
 
 GCuint8 gcStreamRead8(GCstream* stream){

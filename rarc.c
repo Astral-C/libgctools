@@ -1,12 +1,12 @@
-#include "endian.h"
+//#include "endian.h"
 #include "rarc.h"
 
 #define OffsetPointer(ptr, offset) ((void*)((char *)(ptr) + (offset)))
 
-size_t rarcGetSize(void* file){
-	size_t size = ((rarcHeader*)file)->totalSize;
-	return toBEInt(size);
-}
+//size_t rarcGetSize(void* file){
+//	size_t size = ((rarcHeader*)file)->totalSize;
+//	return toBEInt(size);
+//}
 
 void rarcLoadArchive(rarcArchive* arc, void* data){
 	arc->header = data;
@@ -33,12 +33,12 @@ char* rarcGetFile(const rarcArchive* arc, const char* name, int dirIndex){
 			}
 			printf("File not found in %s, recursing to %s\n", dirname, (char*)(arc->names + arc->dirs[f->start].nameOffset));
 			char* ret = rarcGetFile(arc, name, f->start);
-			if(ret == NULL){
-				continue;
-			} 
-			else {
-				return ret;
-			}
+			//if(ret == NULL){
+			//	continue;
+			//} 
+			//else {
+			//	return ret;
+			//}
 		}
 		else if (f->attributes & 0x01 && strncmp(name, fname, strlen(fname)) == 0) {
 			printf("File %s Found in %s\n", fname, dirname);
@@ -46,13 +46,13 @@ char* rarcGetFile(const rarcArchive* arc, const char* name, int dirIndex){
 		}
 	}
 	printf("File %s Not Found.\n", name);
-	return NULL;	
+	//return NULL;	
 }
 
 void rarcDump(const rarcArchive* arc, int dirIndex){
 	const char * dirname = (arc->names + arc->dirs[dirIndex].nameOffset);
 #ifdef __linux__
-	mkdir(dirname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+//	mkdir(dirname, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #elif _WIN32
 	mkdir(dirname, S_IRWXU | S_IROTH | S_IXOTH);
 #else
@@ -68,9 +68,9 @@ void rarcDump(const rarcArchive* arc, int dirIndex){
 			}
 			rarcDump(arc, f->start);
 		} else if (f->attributes & 0x01 && f->id != 0xFFFF) {
-			FILE * fhandle = fopen(fname, "wb");
-			fwrite((arc->fileData + f->start), 1, f->size, fhandle);
-			fclose(fhandle);
+		//	FILE * fhandle = fopen(fname, "wb");
+		//	fwrite((arc->fileData + f->start), 1, f->size, fhandle);
+		//	fclose(fhandle);
 		}
 	}
 	chdir("..");

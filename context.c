@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <assert.h>
 #include "context.h"
 #include "types.h"
 
@@ -9,8 +11,8 @@ GCerror gcInitContext(GCcontext* ctx){
     }
 
     ctx->major = 0;
-    ctx->minor = 1;
-    ctx->revision = 0;
+    ctx->minor = 0;
+    ctx->revision = 1;
 	
     //get system endiness and set context endian to it
     union {
@@ -20,15 +22,31 @@ GCerror gcInitContext(GCcontext* ctx){
 	check.integer = 0x01020304U; 
 
     ctx->endian = (check.bytes[0] == 0x01 ? GC_ENDIAN_BIG : GC_ENDIAN_LITTLE);
-    ctx->allocfn = malloc; //set default allocator to malloc
-    ctx->freefn = free; //set default deallocated to free
+
+    ctx->allocfn = NULL; //will use malloc by default
+    ctx->freefn = NULL; //will use free by default
+    
     return GC_ERROR_SUCCESS;
 }
 
 void* gcAllocMem(const GCcontext * ctx, GCsize sz){
-    return ctx->allocfn(sz);
+    assert(ctx != NULL);
+
+    GCallocfn fn = ctx->allocfn;
+    if(fn != NULL){
+        return fn(sz);
+    }
+    
+    return malloc(sz);
 }
 
 void gcFreeMem(const GCcontext * ctx, void * ptr){
-    return ctx->freefn(ptr);
+    assert(ctx != NULL);
+
+    GCfreefn fn = ctx->freefn;
+    if(fn != NULL){
+        return fn(ptr);
+    }
+
+    return free(ptr);
 }

@@ -28,6 +28,8 @@ struct GCarchive {
 	GCarcfile * files; // list of files in the archive
 	GCsize filenum; // number of files in the archive
 
+	//void* rawFileData; //raw copy of all the file data
+
 	// ...
 
 };

@@ -57,4 +57,4 @@ void rarcLoadArchive(rarcArchive* arc, void* data);
 void rarcDumpDir(const rarcArchive* arc, char* name, int startIndex);
 char* rarcGetFile(const rarcArchive* arc, const char* name, int dirIndex);
 void rarcDump(const rarcArchive *arc, int dirIndex);
-size_t rarcGetSize(void* file);
+//size_t rarcGetSize(void* file);

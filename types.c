@@ -15,6 +15,6 @@ const char* gcGetErrorMessage(GCerror err){
         case GC_ERROR_STREAM_OOB:
             return "Invalid Stream Position";
         default:
-            return "";
+            return "Unknown???";
     }
 }
