@@ -33,20 +33,20 @@ void* gcAllocMem(const GCcontext * ctx, GCsize sz){
     assert(ctx != NULL);
 
     GCallocfn fn = ctx->allocfn;
-    if(fn != NULL){
-        return fn(sz);
+    if(fn == NULL){
+        fn = malloc;
     }
-    
-    return malloc(sz);
+
+    return fn(sz);
 }
 
 void gcFreeMem(const GCcontext * ctx, void * ptr){
     assert(ctx != NULL);
 
     GCfreefn fn = ctx->freefn;
-    if(fn != NULL){
-        return fn(ptr);
+    if(fn == NULL){
+        fn = free;
     }
 
-    return free(ptr);
+    return fn(ptr);
 }

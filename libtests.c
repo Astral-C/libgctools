@@ -31,6 +31,7 @@ int main(int argc, char* argv[]){
 	}
 
 
+	gcFreeArchive(&archive);
 	fclose(f);
 	free(file);
 	return 0;

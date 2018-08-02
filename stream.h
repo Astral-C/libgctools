@@ -33,6 +33,7 @@ GCuint32 gcStreamReadU32(GCstream* stream);
 
 GCfloat gcStreamReadFloat(GCstream* stream);
 GCdouble gcStreamReadDouble(GCstream* stream);
+char* gcStreamReadStr(GCstream* stream, size_t size);
 
 #ifdef __cplusplus
 }

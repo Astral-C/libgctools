@@ -6,6 +6,10 @@
 
 GCerror gcInitArchive(GCarchive * arc, const GCcontext * ctx){
     arc->ctx = ctx;
+    arc->dirnum = 0;
+    arc->filenum = 0;
+    arc->dirs = NULL;
+    arc->files = NULL;
 }
 
 GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
@@ -42,7 +46,36 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
 
     printf("Allocating Memory for Directory Structures\n");
 
+    arc->dirnum = dirCount;
     arc->dirs = gcAllocMem(arc->ctx, (sizeof(GCarcdir)*dirCount));
+    
+    gcStreamSeek(&stream, dirOffset, fsOffset);
+    for(size_t i = 0; i < arc->dirnum; i++)
+    {
+        arc->dirs[i].ctx = arc->ctx;
+        arc->dirs[i].arc = arc;
+        gcStreamRead32(&stream);
+        GCuint32 nameOff = gcStreamRead32(&stream); 
+        size_t curPos = stream.position;
+        gcStreamSeek(&stream, nameOff+strOffset, fsOffset);
+        arc->dirs[i].name = gcStreamReadStr(&stream, strSize);
+        printf("Got Dir %d Name At 0x%x: %s\n", i, stream.position, arc->dirs[i].name);
+        gcStreamSeek(&stream, curPos, 0);
+        gcStreamRead32(&stream);
+        gcStreamRead32(&stream);
+    }
+    
 
     return GC_ERROR_SUCCESS;
+}
+
+GCerror gcFreeArchive(GCarchive * arc){
+
+    for(size_t i = 0; i < arc->dirnum; i++)
+    {
+        printf("Freeing Dir Name %s\n", arc->dirs[i].name);
+        free(arc->dirs[i].name);
+    }
+    printf("Freeing Dir Structures\n");
+    free(arc->dirs);
 }

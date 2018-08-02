@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "stream.h"
 
 GCerror gcInitStream(const GCcontext* ctx, GCstream* stream, const void* buffer, GCsize size, GCendian endian){
@@ -33,27 +34,38 @@ GCint8 gcStreamReadU8(GCstream* stream){
 }
 
 GCint16 gcStreamRead16(GCstream* stream){
-    int16_t r = *((int16_t*)OffsetPointer(stream->buffer, stream->position));
+    int16_t r;
+    memcpy(&r, OffsetPointer(stream->buffer, stream->position), sizeof(int16_t));
     stream->position += 2;
     return (stream->endian != stream->systemOrder ? gcSwap16(r) : r);
 }
 
 GCuint16 gcStreamReadU16(GCstream* stream){
-    int16_t r = *((int16_t*)OffsetPointer(stream->buffer, stream->position));
+    uint16_t r;
+    memcpy(&r, OffsetPointer(stream->buffer, stream->position), sizeof(uint16_t));
     stream->position += 2;
     return (stream->endian != stream->systemOrder ? gcSwap16(r) : r);
 }
 
 GCint32 gcStreamRead32(GCstream* stream){
-    int32_t r = *((int32_t*)OffsetPointer(stream->buffer, stream->position));
+    int32_t r;
+    memcpy(&r, OffsetPointer(stream->buffer, stream->position), sizeof(int32_t));
     stream->position += 4;
     return (stream->endian != stream->systemOrder ? gcSwap32(r) : r);
 }
 
 GCuint32 gcStreamReadU32(GCstream* stream){
-    uint32_t r = *((uint32_t*)OffsetPointer(stream->buffer, stream->position));
+    uint32_t r;
+    memcpy(&r, OffsetPointer(stream->buffer, stream->position), sizeof(uint32_t));
     stream->position += 4;
     return (stream->endian != stream->systemOrder ? gcSwap32(r) : r);
+}
+
+char* gcStreamReadStr(GCstream* stream, size_t size){
+    char* str = (char*)malloc(size);
+    strncpy(str, (char*)OffsetPointer(stream->buffer, stream->position), size);
+    stream->position += size;
+    return str;
 }
 
 GCfloat gcStreamReadFloat(GCstream* stream){
