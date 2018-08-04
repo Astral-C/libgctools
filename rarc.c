@@ -7,8 +7,8 @@
 //	size_t size = ((rarcHeader*)file)->totalSize;
 //	return toBEInt(size);
 //}
-
 void rarcLoadArchive(rarcArchive* arc, void* data){
+	long fSize = 1*sizeof(rarcFile);
 	arc->header = data;
 
 	uint32_t fsOffset = swap32(arc->header->fileSystemOffset);

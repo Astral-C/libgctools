@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include "types.h"
 #include "stream.h"
@@ -45,24 +46,65 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
     GCuint32 strOffset = gcStreamReadU32(&stream);
 
     printf("Allocating Memory for Directory Structures\n");
+    
 
     arc->dirnum = dirCount;
     arc->dirs = gcAllocMem(arc->ctx, (sizeof(GCarcdir)*dirCount));
-    
+
+    arc->filenum = fileCount;
+    arc->files = gcAllocMem(arc->ctx, (sizeof(GCarcfile)*fileCount));
+
+    arc->stringTable = gcAllocMem(arc->ctx, strSize);
+    memcpy(arc->stringTable, OffsetPointer(stream.buffer, strOffset+fsOffset), strSize);
+
     gcStreamSeek(&stream, dirOffset, fsOffset);
+    
     for(size_t i = 0; i < arc->dirnum; i++)
     {
         arc->dirs[i].ctx = arc->ctx;
         arc->dirs[i].arc = arc;
-        gcStreamRead32(&stream);
-        GCuint32 nameOff = gcStreamRead32(&stream); 
-        size_t curPos = stream.position;
-        gcStreamSeek(&stream, nameOff+strOffset, fsOffset);
-        arc->dirs[i].name = gcStreamReadStr(&stream, strSize);
-        printf("Got Dir %d Name At 0x%x: %s\n", i, stream.position, arc->dirs[i].name);
-        gcStreamSeek(&stream, curPos, 0);
-        gcStreamRead32(&stream);
-        gcStreamRead32(&stream);
+
+        gcStreamReadU32(&stream);
+        GCuint32 nameOff = gcStreamReadU32(&stream);
+        gcStreamReadU16(&stream);
+
+        arc->dirs[i].filenum = gcStreamReadU16(&stream);
+        arc->dirs[i].fileoff = gcStreamReadU32(&stream);
+        arc->dirs[i].name = (char*)OffsetPointer(arc->stringTable, nameOff);
+        printf("Dir %d\nName:%s\nFile Count: %d\nFirst File Index: %d\n", i, arc->dirs[i].name, arc->dirs[i].filenum, arc->dirs[i].fileoff);
+
+
+        //get files
+        size_t pos = stream.position;
+        gcStreamSeek(&stream, fileOffset+(arc->dirs[i].fileoff*20), fsOffset);
+        printf("Reading %d Files for Directory\n", arc->dirs[i].filenum);
+        for(size_t i = 0; i < arc->dirs[i].filenum; i++)
+        {
+            arc->files[arc->dirs[i].fileoff+i].ctx = arc->ctx;
+            arc->files[arc->dirs[i].fileoff+i].arc = arc;
+
+            gcStreamReadU32(&stream);
+            GCuint32 fileAttrs = gcStreamReadU32(&stream);
+            GCuint32 nameOff = fileAttrs & 0x00FFFFFF;
+            GCuint32 attrs = fileAttrs & 0xFF;
+            gcStreamReadU32(&stream);
+            gcStreamReadU32(&stream);
+            gcStreamReadU32(&stream);
+
+            arc->files[arc->dirs[i].fileoff+i].name = (char*)OffsetPointer(arc->stringTable, nameOff);
+            printf("Read File %s from %d\n", arc->files[arc->dirs[i].fileoff+i].name, nameOff);
+        }        
+
+        gcStreamSeek(&stream, pos, 0);
+        printf("===\n");
+    }
+    
+
+    for(size_t i = 0; i < arc->filenum; i++)
+    {
+        arc->files[i].ctx = arc->ctx;
+        arc->files[i].arc = arc;
+
     }
     
 
@@ -71,11 +113,6 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
 
 GCerror gcFreeArchive(GCarchive * arc){
 
-    for(size_t i = 0; i < arc->dirnum; i++)
-    {
-        printf("Freeing Dir Name %s\n", arc->dirs[i].name);
-        free(arc->dirs[i].name);
-    }
-    printf("Freeing Dir Structures\n");
-    free(arc->dirs);
+    gcFreeMem(arc->ctx, arc->stringTable);
+    gcFreeMem(arc->ctx, arc->dirs);
 }
