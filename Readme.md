@@ -1,12 +1,12 @@
 ## libgctools
-libgctools is a c library (intended to be a static library) for various gamecube formats such as GCM, rarc, and yay0/yaz0
+libgctools is a C library (intended to be a static library) made for use in hacking tools for gamecube games.
 
-## The ReWrite Branch
-The point of the rewrite branch is to make it so that I can work on rewriting libgctools to be a more clean library than it is now while leaving the old version as is for people to use while this one is in the works.
+## Planned Features
+ - Reading and Creating Gamecube disc image files
+ - Reading and Writing rarc/arc files
+ - Yay0/Yaz0 Compression and Decompression
 
-## TODO
-- Finalize current GCcontext
-- Readd rarc loading based on new rarc structures
-- Add yay/yaz decompression
-- Test rarc loading, decoding if compressed, and dumping
-- Plan out gcm
+## Current TODO
+ - Find out what I was fixing previously
+ - Clean up code
+ - Begin work on yay/yaz compression

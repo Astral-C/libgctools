@@ -1,11 +1,10 @@
 *.a
-*.iso
-*.arc
-*.rarc
 *.cmake
 Makefile
 CMakeCache.txt
 CMakeFiles/
 .vscode/
-a.out
-test
+test/*.arc
+test/*.rarc
+test/*.iso
+gctools_test
