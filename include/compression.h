@@ -1,4 +1,24 @@
 #ifndef LIBGC_COMPRESSION_H
 #define LIBGC_COMPRESSION_H
 
-#endif
+// -------------------------------------------------------------------------- //
+
+#include "context.h"
+#include "stream.h"
+#include "types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+// -------------------------------------------------------------------------- //
+
+GCuint32 gcYaz0DecompressedSize(GCcontext* ctx, GCuint8* src_data, GCuint32 offset);
+void gcYaz0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsize length, GCuint32 offset);
+void* gcYay0Decompress(GCcontext* ctx, void* in, GCsize size);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
+#endif //LIBGC_COMPRESSION_H
