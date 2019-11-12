@@ -5,7 +5,7 @@ libgctools is a C library (intended to be a static library) made for reading and
 ##### Compression
 
 - [x] Yaz0 Decompression
-- [ ] Yay0 Decompression (In Progress)
+- [x] Yay0 Decompression
 - [ ] Yaz0 Compression
 - [ ] Yay0 Compression
 

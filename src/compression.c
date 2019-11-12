@@ -70,9 +70,9 @@ void gcYaz0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsi
 void gcYay0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsize length, GCuint32 offset){
     GCuint32 expand_limit, bit_offset, expand_offset, ref_offset, read_offset, bit_count, bits;
 
-	expand_limit = ((src_data[8] << 24) | (src_data[9] << 16) | (src_data[10] << 8) | src_data[11]);
-	ref_offset = ((src_data[12] << 24) | (src_data[13] << 16) | (src_data[14] << 8) | src_data[15]);
-	read_offset = ((src_data[16] << 24) | (src_data[17] << 16) | (src_data[18] << 8) | src_data[19]);
+	expand_limit = ((src_data[4] << 24) | (src_data[5] << 16) | (src_data[6] << 8) | src_data[7]);
+	ref_offset = ((src_data[8] << 24) | (src_data[9] << 16) | (src_data[10] << 8) | src_data[11]);
+	read_offset = ((src_data[12] << 24) | (src_data[13] << 16) | (src_data[14] << 8) | src_data[15]);
     
     expand_offset = 0;
     bit_count = 0;
