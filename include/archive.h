@@ -95,6 +95,7 @@ GCerror gcFreeArchive(GCarchive * arc);
 // is expected to be in standard big-endian RARC format.
 GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz);
 
+
 // enumerates all the files in the given directory.
 void gcEnumArchiveFiles(const GCarcdir * dir, GCarcfilefn cb, void * user);
 
