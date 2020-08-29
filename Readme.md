@@ -10,8 +10,8 @@ libgctools is a C library (intended to be a static library) made for reading and
 - [ ] Yay0 Compression
 
 ##### Archive
-- [ ] Load Rarc Archives (In Progress)
-- [ ] Save Rarc Archives
+- [x] Load Rarc Archives
+- [ ] Save Rarc Archives (In Progress)
 
 ##### Disk
 - [ ] Load GCM/ISO Disk Images
