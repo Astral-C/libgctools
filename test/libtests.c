@@ -17,16 +17,16 @@ int main(int argc, char* argv[]){
 
 	printf("Made using libgctools v%d.%d.%d\n", ctx.major, ctx.minor, ctx.revision);
 
-	FILE* f = fopen("test/luige.arc", "rb");
+	FILE* f = fopen("map2.arc", "rb");
 	fseek(f, 0L, SEEK_END);
 	GCsize size = (GCsize)ftell(f);
 	rewind(f);
 	
-	printf("Allocating mem for file...");
+	printf("Allocating %u bytes for file...\n", size);
 	void* file = malloc(size);
 	fread(file, 1, size, f);
 
-	printf("Initing archive...");
+	printf("Initing archive...\n");
 	gcInitArchive(&archive, &ctx);
 	if((err = gcLoadArchive(&archive, file, size)) != GC_ERROR_SUCCESS){
 		printf("Error Loading Archive: %s\n", gcGetErrorMessage(err));

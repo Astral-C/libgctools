@@ -7,4 +7,5 @@ CMakeFiles/
 test/*.arc
 test/*.rarc
 test/*.iso
+*.arc
 gctools_test

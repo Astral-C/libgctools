@@ -73,7 +73,8 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
             arc->files[fileIndex].ctx = arc->ctx;
             arc->files[fileIndex].arc = arc;
 
-            gcStreamReadU32(&stream);
+            GCuint16 id = gcStreamReadU16(&stream);
+	        gcStreamReadU16(&stream);
             GCuint32 fileAttrs = gcStreamReadU32(&stream);
             GCuint32 nameOff = fileAttrs & 0x00FFFFFF;
             arc->files[fileIndex].attr = (fileAttrs >> 24) & 0xFF;
