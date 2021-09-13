@@ -35,6 +35,18 @@ GCfloat gcStreamReadFloat(GCstream* stream);
 GCdouble gcStreamReadDouble(GCstream* stream);
 char* gcStreamReadStr(GCstream* stream, size_t size);
 
+
+void gcStreamWrite8(GCstream* stream, int8_t r);
+void gcStreamWriteU8(GCstream* stream, uint8_t r);
+
+void gcStreamWrite16(GCstream* stream, int16_t r);
+void gcStreamWriteU16(GCstream* stream, uint16_t r);
+
+void gcStreamWrite32(GCstream* stream, int32_t r);
+void gcStreamWriteU32(GCstream* stream, uint32_t r);
+
+void gcStreamWriteStr(GCstream* stream, const char* str, size_t size);
+
 #ifdef __cplusplus
 }
 #endif

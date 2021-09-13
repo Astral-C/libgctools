@@ -68,10 +68,39 @@ char* gcStreamReadStr(GCstream* stream, size_t size){
     return str;
 }
 
-GCfloat gcStreamReadFloat(GCstream* stream){
-    //TODO
+// Writer Functions
+
+void gcStreamWrite8(GCstream* stream, int8_t r){
+    *((int8_t*)OffsetPointer(stream->buffer, stream->position)) = r;
+    stream->position++;
 }
 
-GCdouble gcStreamReadDouble(GCstream* stream){
-    //TODO
+void gcStreamWriteU8(GCstream* stream, uint8_t r){
+    *((uint8_t*)OffsetPointer(stream->buffer, stream->position)) = r;
+    stream->position++;
+}
+
+void gcStreamWrite16(GCstream* stream, int16_t r){
+    *((int16_t*)OffsetPointer(stream->buffer, stream->position)) = (stream->endian == GC_ENDIAN_LITTLE ? r : gcSwap16(r));
+    stream->position += sizeof(int16_t);
+}
+
+void gcStreamWriteU16(GCstream* stream, uint16_t r){
+    *((uint16_t*)OffsetPointer(stream->buffer, stream->position)) = (stream->endian == GC_ENDIAN_LITTLE ? r : gcSwap16(r));
+    stream->position += sizeof(uint16_t);
+}
+
+void gcStreamWrite32(GCstream* stream, int32_t r){
+    *((int32_t*)OffsetPointer(stream->buffer, stream->position)) = (stream->endian == GC_ENDIAN_LITTLE ? r : gcSwap32(r));
+    stream->position += sizeof(int32_t);
+}
+
+void gcStreamWriteU32(GCstream* stream, uint32_t r){
+    *((uint32_t*)OffsetPointer(stream->buffer, stream->position)) = (stream->endian == GC_ENDIAN_LITTLE ? r : gcSwap32(r));
+    stream->position += sizeof(uint32_t);
+}
+
+void gcStreamWriteStr(GCstream* stream, const char* str, size_t size){
+    strncpy((char*)OffsetPointer(stream->buffer, stream->position), str, size);
+    stream->position += size;
 }

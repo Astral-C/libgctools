@@ -1,9 +1,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "types.h"
-#include "stream.h"
-#include "archive.h"
+#include "../include/types.h"
+#include "../include/stream.h"
+#include "../include/archive.h"
+
+GCuint16 gcHashName(const char* str){
+    GCuint16 hash = 0;
+
+    GCuint16 multiplyer = 1;
+    if(strlen(str) + 1 == 2){
+        multiplyer = 2;
+    } else if(strlen(str) + 1 >= 3){
+        multiplyer = 3;
+    }
+
+    for (size_t i = 0; i < strlen(str); i++){
+        hash = (GCuint16)(hash * multiplyer);
+        hash += (GCuint16)str[i];
+    }
+
+    return hash;
+}
 
 GCerror gcInitArchive(GCarchive * arc, const GCcontext * ctx){
     arc->ctx = ctx;
@@ -99,6 +117,185 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
     return GC_ERROR_SUCCESS;
 }
 
+GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
+    GCstream dirStream;
+    GCstream fileStream;
+    GCstream headerStream;
+    GCstream fileSysStream;
+
+    GCerror err;
+
+    GCsize archiveSize = 0x40 + (arc->dirnum * 0x10) + (arc->filenum * 0x14);
+    
+    GCsize stringTableSize = 0;
+    GCsize fileDataSize = 0;
+    GCsize stringTableCount = 0;
+
+    for (GCsize d = 0; d < arc->dirnum; d++){
+        GCarcdir dir = arc->dirs[d];
+        stringTableSize += strlen(dir.name);
+        stringTableCount++;
+        for (GCsize f = dir.fileoff; f < dir.filenum; f++){
+            GCarcfile file = arc->files[f]; 
+            if(file.attr & 0x01){
+                stringTableSize += strlen(file.name);
+                fileDataSize += file.size;
+                stringTableCount++;
+            }
+        }
+        
+    }
+    
+    if(ptr == NULL) return archiveSize + stringTableSize + fileDataSize;
+    
+    printf("Size calcuation complete.\n");
+    
+    //Get pointers to each chunk of the file so we can generate offsets and indices as we go
+    GCuint8* dirChunk = OffsetPointer(ptr, 0x40);
+    GCuint8* fileChunk = OffsetPointer(ptr, 0x40 + (arc->dirnum * 0x10));
+    GCuint8* fileDataChunk = OffsetPointer(ptr, archiveSize);
+    //Even though we won't be doing anything with this until we've generated the string table, still generate the pointer to it now
+    GCuint8* stringTableChunk = OffsetPointer(ptr, archiveSize + fileDataSize);
+
+    printf("Offset pointers to proper location in file buffer.\n");
+
+    //Ensure that this buffer is empty before we write to it
+    memset((void*)ptr, 0, archiveSize + stringTableSize + fileDataSize);
+
+    printf("Initing write streams...\n");
+
+    //Initialize the write streams for the different file segments
+    gcInitStream(arc->ctx, &headerStream, ptr, 0x20, GC_ENDIAN_BIG);
+    gcInitStream(arc->ctx, &fileSysStream, OffsetPointer(ptr, 0x20), 0x20, GC_ENDIAN_BIG);
+    gcInitStream(arc->ctx, &dirStream, dirChunk, (arc->dirnum * 0x10), GC_ENDIAN_BIG);
+    gcInitStream(arc->ctx, &fileStream, fileChunk, (arc->filenum * 0x14), GC_ENDIAN_BIG);
+
+    //Going to build a hashmap to store names for stringtable
+    GCuint32 stringTableOffsets[stringTableCount];
+
+    //Fill with a default value
+    for (GCsize i = 0; i < stringTableCount; i++){
+        stringTableOffsets[i] = -1;
+    }
+    
+    printf("String Table Hashmap Initiate with size %d\n", stringTableCount);
+    
+    //Where is the current end of all file data
+    GCuint32 curFileOffset = 0;
+
+    //Where is the current end of the string table, used when adding new entries
+    GCuint32 curStrTblOffset = 0;
+
+    //Used to keep track of the file indices/ids
+    GCuint16 curFileIndex = 0;
+
+    for (GCsize d = 0; d < arc->dirnum; d++){
+        GCarcdir dir = arc->dirs[d];
+
+        // Get the hash of the name and see if we have the offset in our hashmap
+        GCuint16 tableIndex = gcHashName(dir.name) % stringTableCount;
+
+        printf("Hash of Directory Name %s is %x, hasmap index is %u\n", dir.name, gcHashName(dir.name), gcHashName(dir.name) % stringTableCount);
+
+        if(stringTableOffsets[tableIndex] == -1){
+            stringTableOffsets[tableIndex] = curStrTblOffset;
+            strcpy(OffsetPointer(stringTableChunk, curStrTblOffset), dir.name);
+            curStrTblOffset += strlen(dir.name);
+            printf("Added directory name %s to string table\n", dir.name);
+        }
+
+
+        gcStreamWriteU32(&dirStream, 0); // What?
+        gcStreamWriteU32(&dirStream, stringTableOffsets[tableIndex]);
+        gcStreamWriteU16(&dirStream, gcHashName(dir.name));
+        gcStreamWriteU16(&dirStream, dir.filenum);
+        gcStreamWriteU32(&dirStream, curFileIndex);
+
+        printf("Finished writing dir node %s\n", dir.name);
+
+        for (size_t f = dir.fileoff; f < dir.filenum; f++){
+            GCarcfile file = arc->files[f]; 
+            printf("Hash of File Name %s is %x, hasmap index is %u\n", file.name, gcHashName(file.name),  gcHashName(file.name) % stringTableCount);
+            GCuint16 fileTableIndex = gcHashName(file.name) % stringTableCount;
+
+            if(stringTableOffsets[fileTableIndex] == -1){
+                stringTableOffsets[fileTableIndex] = curStrTblOffset;
+                strcpy(OffsetPointer(stringTableChunk, curStrTblOffset), file.name);
+                curStrTblOffset += strlen(file.name);
+                printf("Added filename %s to string table\n", file.name);
+            }
+
+            //Subdirs use 0xFFFF instead of a proper index
+            if(file.attr & 0x01){
+                gcStreamWriteU16(&fileStream, curFileIndex);
+                curFileIndex++;
+            } else if (file.attr & 0x02){
+                gcStreamWriteU16(&fileStream, 0xFFFF);
+            }
+            
+            gcStreamWriteU16(&fileStream, gcHashName(file.name));
+            gcStreamWriteU8(&fileStream, file.attr);
+            gcStreamWriteU8(&fileStream, 0); //bad
+            gcStreamWriteU16(&fileStream, stringTableOffsets[tableIndex]);
+            
+            printf("Wrote first part of file node %s\n", file.name);
+
+            if(file.attr & 0x01){
+                gcStreamWriteU32(&fileStream, curFileOffset);
+                gcStreamWriteU32(&fileStream, file.size);
+                memcpy(OffsetPointer(fileDataChunk, curFileOffset), file.data, file.size);
+                curFileOffset += file.size;
+                printf("Finished writing file node %s\n", file.name);
+            } else if(file.attr & 0x02){
+
+                //Subdir file entries replace the offset with the index of the dir it points to
+                GCuint32 dirIndex = 0;
+
+                for (GCsize td = 0; td < arc->dirnum; td++){
+                    if(strcmp(arc->dirs[td].name, file.name) == 0){
+                        dirIndex = (GCuint32)td;
+                        break;
+                    }
+                }
+
+                gcStreamWriteU32(&fileStream, dirIndex);
+                gcStreamWriteU32(&fileStream, 0x10); //Size is written as size of dir node
+                printf("Finished writing subdirectory file node %s\n", file.name);
+            }
+
+            // Padding
+            gcStreamWriteU32(&fileStream, 0);
+        }
+    }
+
+    printf("All file and directory nodes written\n");
+
+    //Now we can write all of the header data
+    gcStreamWriteStr(&headerStream, "RARC", 4);
+    gcStreamWriteU32(&headerStream, archiveSize + stringTableSize + fileDataSize);
+    gcStreamWriteU32(&headerStream, 0x20);
+    gcStreamWriteU32(&headerStream, archiveSize);
+    gcStreamWriteU32(&headerStream, fileDataSize);
+    gcStreamWriteU32(&headerStream, 0); //MRAM, unsupported
+    gcStreamWriteU32(&headerStream, 0); //ARAM, unsupported
+    gcStreamWriteU32(&headerStream, 0); //Padding
+
+    printf("Finished writing header\n");
+
+    //Filesystem header
+    gcStreamWriteU32(&fileSysStream, arc->dirnum);
+    gcStreamWriteU32(&fileSysStream, 0x20);
+    gcStreamWriteU32(&fileSysStream, arc->filenum);
+    gcStreamWriteU32(&fileSysStream, 0x20 + (0x10 * arc->dirnum));
+    gcStreamWriteU32(&fileSysStream, stringTableSize);
+    gcStreamWriteU32(&fileSysStream, 0x20 + (archiveSize + fileDataSize) - 0x20);
+    gcStreamWriteU32(&fileSysStream, curFileIndex);
+    gcStreamWriteU8(&fileSysStream, 0);
+    gcStreamWriteU32(&fileSysStream, 0);
+
+    printf("Finished writing filesystem header.\nArc writing complete!\n\n");
+}
+
 GCerror gcFreeArchive(GCarchive * arc){
     for (size_t f = 0; f < arc->filenum; f++){
         if(arc->files[f].data != NULL){
@@ -110,3 +307,4 @@ GCerror gcFreeArchive(GCarchive * arc){
     gcFreeMem(arc->ctx, arc->files);
     gcFreeMem(arc->ctx, arc->dirs);
 }
+

@@ -77,9 +77,6 @@ typedef enum {
 
 } GCarcattr;
 
-// enumerator callback for archive enum functions. return value
-// indicates whether to stop (zero) or continue (non-zero).
-typedef GCbool (* GCarcfilefn)(const GCarchive * arc, const GCarcfile * file, void * user);
 
 // -------------------------------------------------------------------------- //
 
@@ -95,9 +92,9 @@ GCerror gcFreeArchive(GCarchive * arc);
 // is expected to be in standard big-endian RARC format.
 GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz);
 
-
-// enumerates all the files in the given directory.
-void gcEnumArchiveFiles(const GCarcdir * dir, GCarcfilefn cb, void * user);
+// if no pointer is provided, will generate the filesize of the resuling arc
+// if a pointer is provided, it will generate an archive file into that memory block
+GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr);
 
 // -------------------------------------------------------------------------- //
 
