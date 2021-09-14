@@ -135,7 +135,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
         GCarcdir dir = arc->dirs[d];
         stringTableSize += strlen(dir.name);
         stringTableCount++;
-        for (GCsize f = dir.fileoff; f < dir.filenum; f++){
+        for (GCsize f = dir.fileoff; f < dir.fileoff + dir.filenum; f++){
             GCarcfile file = arc->files[f]; 
             if(file.attr & 0x01){
                 stringTableSize += strlen(file.name) + 1;
@@ -213,7 +213,12 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
         
         printf("Name offset for %s is %u\n", dir.name, nameOffset);
 
-        gcStreamWriteU32(&dirStream, 0); // What?
+        char dirID[4];
+        for (size_t i = 0; i < 4; i++){
+            dirID[i] = dir.name[i] - 32;
+        }
+        
+        gcStreamWriteU32(&dirStream, (GCuint32)*(&dirID));
         gcStreamWriteU32(&dirStream, nameOffset);
         gcStreamWriteU16(&dirStream, gcHashName(dir.name));
         gcStreamWriteU16(&dirStream, dir.filenum);
@@ -221,7 +226,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
 
         printf("Finished writing dir node %s\n", dir.name);
 
-        for (size_t f = dir.fileoff; f < dir.filenum; f++){
+        for (size_t f = dir.fileoff; f < dir.fileoff + dir.filenum; f++){
             GCarcfile file = arc->files[f]; 
 
             GCuint32 nameOffset = 0;
