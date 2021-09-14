@@ -138,7 +138,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
         for (GCsize f = dir.fileoff; f < dir.filenum; f++){
             GCarcfile file = arc->files[f]; 
             if(file.attr & 0x01){
-                stringTableSize += strlen(file.name);
+                stringTableSize += strlen(file.name) + 1;
                 fileDataSize += file.size;
                 stringTableCount++;
             }
@@ -146,6 +146,8 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
         
     }
     
+    stringTableSize += stringTableCount; //We need to add 1 null terminator per string, so add the number of strings
+
     if(ptr == NULL) return archiveSize + stringTableSize + fileDataSize;
     
     printf("Size calcuation complete.\n");
@@ -153,9 +155,9 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     //Get pointers to each chunk of the file so we can generate offsets and indices as we go
     GCuint8* dirChunk = OffsetPointer(ptr, 0x40);
     GCuint8* fileChunk = OffsetPointer(ptr, 0x40 + (arc->dirnum * 0x10));
-    GCuint8* fileDataChunk = OffsetPointer(ptr, archiveSize);
+    GCuint8* fileDataChunk = OffsetPointer(ptr, archiveSize + stringTableSize);
     //Even though we won't be doing anything with this until we've generated the string table, still generate the pointer to it now
-    GCuint8* stringTableChunk = OffsetPointer(ptr, archiveSize + fileDataSize);
+    GCuint8* stringTableChunk = OffsetPointer(ptr, archiveSize);
 
     printf("Offset pointers to proper location in file buffer.\n");
 
@@ -170,43 +172,47 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcInitStream(arc->ctx, &dirStream, dirChunk, (arc->dirnum * 0x10), GC_ENDIAN_BIG);
     gcInitStream(arc->ctx, &fileStream, fileChunk, (arc->filenum * 0x14), GC_ENDIAN_BIG);
 
-    //Going to build a hashmap to store names for stringtable
-    GCuint32 stringTableOffsets[stringTableCount];
-
-    //Fill with a default value
-    for (GCsize i = 0; i < stringTableCount; i++){
-        stringTableOffsets[i] = -1;
-    }
-    
-    printf("String Table Hashmap Initiate with size %d\n", stringTableCount);
     
     //Where is the current end of all file data
     GCuint32 curFileOffset = 0;
 
-    //Where is the current end of the string table, used when adding new entries
+    //Offset into string table of current end
     GCuint32 curStrTblOffset = 0;
+
+    //How many strings have been written thus far
+    GCuint32 curStrCount = 0;
 
     //Used to keep track of the file indices/ids
     GCuint16 curFileIndex = 0;
 
+    GCuint16 stringTableHashes[stringTableCount];
+
     for (GCsize d = 0; d < arc->dirnum; d++){
         GCarcdir dir = arc->dirs[d];
 
-        // Get the hash of the name and see if we have the offset in our hashmap
-        GCuint16 tableIndex = gcHashName(dir.name) % stringTableCount;
-
-        printf("Hash of Directory Name %s is %x, hasmap index is %u\n", dir.name, gcHashName(dir.name), gcHashName(dir.name) % stringTableCount);
-
-        if(stringTableOffsets[tableIndex] == -1){
-            stringTableOffsets[tableIndex] = curStrTblOffset;
-            strcpy(OffsetPointer(stringTableChunk, curStrTblOffset), dir.name);
-            curStrTblOffset += strlen(dir.name);
-            printf("Added directory name %s to string table\n", dir.name);
+        GCuint32 nameOffset = 0;
+        for(int i = 0; i < stringTableCount; i++){
+            if(stringTableHashes[i] == gcHashName(dir.name)){
+                GCuint32 offset = 0;
+                for(int s = 0; s < curStrCount; s++){
+                    if(strcmp(OffsetPointer(stringTableChunk, offset), dir.name) == 0){
+                        nameOffset = offset;
+                        break;
+                    }
+                    offset += strlen(dir.name);
+                }
+                break;
+            }
         }
 
-
+        if(nameOffset == 0){
+            nameOffset = curStrTblOffset;
+            strncpy(OffsetPointer(stringTableChunk, nameOffset), dir.name, strlen(dir.name)+1);
+            curStrTblOffset += strlen(dir.name)+1;
+        }
+        
         gcStreamWriteU32(&dirStream, 0); // What?
-        gcStreamWriteU32(&dirStream, stringTableOffsets[tableIndex]);
+        gcStreamWriteU32(&dirStream, nameOffset);
         gcStreamWriteU16(&dirStream, gcHashName(dir.name));
         gcStreamWriteU16(&dirStream, dir.filenum);
         gcStreamWriteU32(&dirStream, curFileIndex);
@@ -215,14 +221,26 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
 
         for (size_t f = dir.fileoff; f < dir.filenum; f++){
             GCarcfile file = arc->files[f]; 
-            printf("Hash of File Name %s is %x, hasmap index is %u\n", file.name, gcHashName(file.name),  gcHashName(file.name) % stringTableCount);
-            GCuint16 fileTableIndex = gcHashName(file.name) % stringTableCount;
 
-            if(stringTableOffsets[fileTableIndex] == -1){
-                stringTableOffsets[fileTableIndex] = curStrTblOffset;
-                strcpy(OffsetPointer(stringTableChunk, curStrTblOffset), file.name);
-                curStrTblOffset += strlen(file.name);
-                printf("Added filename %s to string table\n", file.name);
+            GCuint32 nameOffset = 0;
+            for(int i = 0; i < stringTableCount; i++){
+                if(stringTableHashes[i] == gcHashName(file.name)){
+                    GCuint32 offset = 0;
+                    for(int s = 0; s < curStrCount; s++){
+                        if(strcmp(OffsetPointer(stringTableChunk, offset), file.name) == 0){
+                            nameOffset = offset;
+                            break;
+                        }
+                        offset += strlen(file.name);
+                    }
+                    break;
+                }
+            }
+
+            if(nameOffset == 0){
+                nameOffset = curStrTblOffset;
+                strncpy(OffsetPointer(stringTableChunk, nameOffset), file.name, strlen(file.name)+1);
+                curStrTblOffset += strlen(file.name)+1;
             }
 
             //Subdirs use 0xFFFF instead of a proper index
@@ -236,7 +254,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
             gcStreamWriteU16(&fileStream, gcHashName(file.name));
             gcStreamWriteU8(&fileStream, file.attr);
             gcStreamWriteU8(&fileStream, 0); //bad
-            gcStreamWriteU16(&fileStream, stringTableOffsets[tableIndex]);
+            gcStreamWriteU16(&fileStream, nameOffset);
             
             printf("Wrote first part of file node %s\n", file.name);
 
@@ -274,7 +292,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteStr(&headerStream, "RARC", 4);
     gcStreamWriteU32(&headerStream, archiveSize + stringTableSize + fileDataSize);
     gcStreamWriteU32(&headerStream, 0x20);
-    gcStreamWriteU32(&headerStream, archiveSize);
+    gcStreamWriteU32(&headerStream, archiveSize + stringTableSize);
     gcStreamWriteU32(&headerStream, fileDataSize);
     gcStreamWriteU32(&headerStream, 0); //MRAM, unsupported
     gcStreamWriteU32(&headerStream, 0); //ARAM, unsupported
@@ -286,9 +304,9 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteU32(&fileSysStream, arc->dirnum);
     gcStreamWriteU32(&fileSysStream, 0x20);
     gcStreamWriteU32(&fileSysStream, arc->filenum);
-    gcStreamWriteU32(&fileSysStream, 0x20 + (0x10 * arc->dirnum));
+    gcStreamWriteU32(&fileSysStream, 0x20 + (0x10 * arc->dirnum) - 0x20);
     gcStreamWriteU32(&fileSysStream, stringTableSize);
-    gcStreamWriteU32(&fileSysStream, 0x20 + (archiveSize + fileDataSize) - 0x20);
+    gcStreamWriteU32(&fileSysStream, 0x20 + (archiveSize) - 0x20);
     gcStreamWriteU32(&fileSysStream, curFileIndex);
     gcStreamWriteU8(&fileSysStream, 0);
     gcStreamWriteU32(&fileSysStream, 0);
