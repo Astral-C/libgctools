@@ -308,9 +308,9 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteU32(&fileSysStream, arc->dirnum);
     gcStreamWriteU32(&fileSysStream, 0x20);
     gcStreamWriteU32(&fileSysStream, arc->filenum);
-    gcStreamWriteU32(&fileSysStream, 0x20 + (0x10 * arc->dirnum) - 0x20);
+    gcStreamWriteU32(&fileSysStream, 0x20 + (0x10 * arc->dirnum));
     gcStreamWriteU32(&fileSysStream, stringTableSize);
-    gcStreamWriteU32(&fileSysStream, 0x20 + (archiveSize) - 0x20);
+    gcStreamWriteU32(&fileSysStream, archiveSize - 0x20);
     gcStreamWriteU32(&fileSysStream, curFileIndex);
     gcStreamWriteU8(&fileSysStream, 0);
     gcStreamWriteU32(&fileSysStream, 0);
