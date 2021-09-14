@@ -29,12 +29,9 @@ GCuint32 gcStringTableAddr(GCuint8* stringTableChunk, GCuint32* curStrCount, GCu
     GCuint32 nameOffset = 0;
     
     GCuint32 offset = 0;
-    printf("Current # of strings in table is %d\n", *curStrCount);
     for(int s = 0; s < *curStrCount; s++){
-        printf("Checking %s | %s\n", OffsetPointer(stringTableChunk, offset), str);
         if(strcmp(OffsetPointer(stringTableChunk, offset), str) == 0){
             nameOffset = offset;
-            printf("%s == %s\n", OffsetPointer(stringTableChunk, offset), str);
             break;
         }
         offset += strlen(OffsetPointer(stringTableChunk, offset))+1;
@@ -178,8 +175,6 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
 
     if(ptr == NULL) return archiveSize + stringTableSize + fileDataSize;
     
-    printf("Size calcuation complete.\n");
-    
     //Get pointers to each chunk of the file so we can generate offsets and indices as we go
     GCuint8* dirChunk = OffsetPointer(ptr, 0x40);
     GCuint8* fileChunk = OffsetPointer(ptr, 0x40 + (arc->dirnum * 0x10));
@@ -187,12 +182,8 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     //Even though we won't be doing anything with this until we've generated the string table, still generate the pointer to it now
     GCuint8* stringTableChunk = OffsetPointer(ptr, archiveSize);
 
-    printf("Offset pointers to proper location in file buffer.\n");
-
     //Ensure that this buffer is empty before we write to it
     memset((void*)ptr, 0, archiveSize + stringTableSize + fileDataSize);
-
-    printf("Initing write streams...\n");
 
     //Initialize the write streams for the different file segments
     gcInitStream(arc->ctx, &headerStream, ptr, 0x20, GC_ENDIAN_BIG);
