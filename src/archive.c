@@ -5,6 +5,8 @@
 #include "../include/stream.h"
 #include "../include/archive.h"
 
+#define padTo32(x) (x + (32-1)) & ~(32-1)
+
 GCuint16 gcHashName(const char* str){
     GCuint16 hash = 0;
 
@@ -147,6 +149,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     }
     
     stringTableSize += stringTableCount; //We need to add 1 null terminator per string, so add the number of strings
+    stringTableSize = padTo32(stringTableSize);
 
     if(ptr == NULL) return archiveSize + stringTableSize + fileDataSize;
     
@@ -213,12 +216,8 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
         
         printf("Name offset for %s is %u\n", dir.name, nameOffset);
 
-        char dirID[4];
-        for (size_t i = 0; i < 4; i++){
-            dirID[i] = dir.name[i] - 32;
-        }
         
-        gcStreamWriteU32(&dirStream, (GCuint32)*(&dirID));
+        gcStreamWriteStr(&dirStream, dir.name, 4);
         gcStreamWriteU32(&dirStream, nameOffset);
         gcStreamWriteU16(&dirStream, gcHashName(dir.name));
         gcStreamWriteU16(&dirStream, dir.filenum);
