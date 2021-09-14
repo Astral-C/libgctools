@@ -211,6 +211,8 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
             curStrTblOffset += strlen(dir.name)+1;
         }
         
+        printf("Name offset for %s is %u\n", dir.name, nameOffset);
+
         gcStreamWriteU32(&dirStream, 0); // What?
         gcStreamWriteU32(&dirStream, nameOffset);
         gcStreamWriteU16(&dirStream, gcHashName(dir.name));
@@ -242,6 +244,8 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
                 strncpy(OffsetPointer(stringTableChunk, nameOffset), file.name, strlen(file.name)+1);
                 curStrTblOffset += strlen(file.name)+1;
             }
+
+            printf("Name offset for %s is %u\n", file.name, nameOffset);
 
             //Subdirs use 0xFFFF instead of a proper index
             if(file.attr & 0x01){
