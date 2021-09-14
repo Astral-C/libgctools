@@ -17,8 +17,8 @@ int main(int argc, char* argv[]){
 
 	printf("Made using libgctools v%d.%d.%d\n", ctx.major, ctx.minor, ctx.revision);
 
-	FILE* f = fopen("room_02.arc", "rb");
-	FILE* fout = fopen("room_02_new.arc", "wb");
+	FILE* f = fopen("map2.arc", "rb");
+	FILE* fout = fopen("map2.szp", "wb");
 	fseek(f, 0L, SEEK_END);
 	GCsize size = (GCsize)ftell(f);
 	rewind(f);
@@ -36,10 +36,13 @@ int main(int argc, char* argv[]){
 	GCsize outSize = gcSaveArchive(&archive, NULL);
 	printf("Archive size on save would be %u bytes\n", outSize);
 	GCuint8* archiveOut = malloc(outSize);
+	GCuint8* archiveCmp = malloc(outSize);
 
 	gcSaveArchive(&archive, archiveOut);
 
-	fwrite(archiveOut, outSize, 1, fout);
+	GCsize cmpSize = gcYay0Compress(&ctx, archiveOut, archiveCmp, outSize);
+
+	fwrite(archiveCmp, cmpSize, 1, fout);
 
 	gcFreeArchive(&archive);
 	

@@ -16,6 +16,7 @@ extern "C" {
 GCuint32 gcDecompressedSize(GCcontext* ctx, GCuint8* src_data, GCuint32 offset);
 void gcYaz0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsize length, GCuint32 offset);
 void gcYay0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsize length, GCuint32 offset);
+GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GCsize srcout_size);
 
 #ifdef __cplusplus
 }

@@ -173,12 +173,12 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     stringTableSize += stringTableCount; //We need to add 1 null terminator per string, so add the number of strings
     stringTableSize = padTo32(stringTableSize);
 
-    if(ptr == NULL) return archiveSize + stringTableSize + fileDataSize;
+    if(ptr == NULL) return padTo32(archiveSize + stringTableSize + fileDataSize);
     
     //Get pointers to each chunk of the file so we can generate offsets and indices as we go
     GCuint8* dirChunk = OffsetPointer(ptr, 0x40);
     GCuint8* fileChunk = OffsetPointer(ptr, 0x40 + (arc->dirnum * 0x10));
-    GCuint8* fileDataChunk = OffsetPointer(ptr, archiveSize + stringTableSize);
+    GCuint8* fileDataChunk = OffsetPointer(ptr, padTo32(archiveSize + stringTableSize));
     //Even though we won't be doing anything with this until we've generated the string table, still generate the pointer to it now
     GCuint8* stringTableChunk = OffsetPointer(ptr, archiveSize);
 
@@ -267,7 +267,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteStr(&headerStream, "RARC", 4);
     gcStreamWriteU32(&headerStream, archiveSize + stringTableSize + fileDataSize);
     gcStreamWriteU32(&headerStream, 0x20);
-    gcStreamWriteU32(&headerStream, archiveSize + stringTableSize - 0x20);
+    gcStreamWriteU32(&headerStream, padTo32(archiveSize + stringTableSize) - 0x20);
     gcStreamWriteU32(&headerStream, fileDataSize);
     gcStreamWriteU32(&headerStream, 0); //MRAM, unsupported
     gcStreamWriteU32(&headerStream, 0); //ARAM, unsupported

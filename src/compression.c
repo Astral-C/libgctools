@@ -1,4 +1,5 @@
 #include "compression.h"
+#include <string.h>
 
 GCuint32 gcDecompressedSize(GCcontext* ctx, GCuint8* src_data, GCuint32 offset){
     return gcSwap32(*((GCuint32*)src_data + 1) - offset);
@@ -153,4 +154,114 @@ void gcYay0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsi
         --bit_count;
     } while(expand_offset < expand_limit);
 
+}
+
+// Compresses a file into work buffer and return the total size of the compressed data. work_buffer should be same size as src_data.
+GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GCsize srcout_size){
+    // Method adapted from Cuyler36's GCNToolkit.
+    // This is a stopgap solution until I can get more knowledgeable about the format and write my own compressor
+
+    const GCuint32 OFSBITS = 12;
+    GCint32 decPtr = 0;
+    
+    // Set up for mask buffer
+    GCuint32 maskMaxSize = (srcout_size + 32) >> 3;
+    GCuint32 maskBitCount = 0, mask = 0;
+    GCint32 maskPtr = 0;
+    
+    // Set up for link buffer
+    GCuint32 linkMaxSize = srcout_size >> 1;
+    GCuint16 linkOffset = 0;
+    GCint32 linkPtr = 0;
+    GCuint16 minCount = 3, maxCount = 273;
+
+    // Set up chunk and window settings
+    GCint32 chunkPtr = 0, windowPtr = 0, windowLen = 0, length = 0, maxlen = 0;
+
+    // Initialize all the buffers with proper size
+    GCuint32 maskBuffer[maskMaxSize >> 2];
+    GCuint16 linkBuffer[linkMaxSize];
+    GCuint8 chunkBuffer[srcout_size];
+
+    while(decPtr < srcout_size){
+        if(windowLen >= 1 << OFSBITS){
+            windowLen -= (1 << OFSBITS);
+            windowPtr = decPtr - windowLen;
+        }
+
+        if(srcout_size - decPtr < maxCount){
+            maxCount = (GCuint16)(srcout_size - decPtr);
+        }
+
+        maxlen = 0;
+
+        for (GCsize i = 0; i < windowLen; i++)
+        {
+            for (length = 0; length < (windowLen - i) && length < maxCount; length++)
+            {
+                if(src_data[decPtr + length] != src_data[windowPtr + length + i]) break;
+            }
+            if(length > maxlen)
+            {
+                maxlen = length;
+                linkOffset = (GCuint16)windowLen - i;
+
+            }
+            
+        }
+        
+        length = maxlen;
+
+        mask <<= 1;
+        if(length >= minCount){
+            GCuint16 link = (GCuint16)((linkOffset - 1) & 0x0FFF);
+
+            if(length < 18){
+                link |= (GCuint16)((length - 2) << 12);
+            } else {
+                chunkBuffer[chunkPtr++] = (GCuint8)(length - 18);
+            }
+
+            linkBuffer[linkPtr++] = gcSwap16(link);
+            decPtr += length;
+            windowLen += length;
+        } else {
+            chunkBuffer[chunkPtr++] = src_data[decPtr++];
+            windowLen++;
+            mask |= 1;
+        }
+
+        maskBitCount++;
+        if(maskBitCount == 32){
+            maskBuffer[maskPtr] = gcSwap32(mask);
+            maskPtr++;
+            maskBitCount =0;
+        }
+
+    }
+
+    if(maskBitCount > 0){
+        mask <<= 32 - maskBitCount;
+        maskBuffer[maskPtr] = gcSwap32(mask);
+        maskPtr++;
+    }
+
+    GCsize compressedSize = 0x10 + (sizeof(GCuint32) * maskPtr) + (sizeof(GCuint16) * linkPtr) + chunkPtr;
+
+    const char* fourcc = "Yay0";
+    GCuint32 linkSecOff = 0x10 + (sizeof(GCuint32) * maskPtr);
+    GCuint32 chunkSecOff = linkSecOff + (sizeof(GCuint16) * linkPtr);
+
+    GCstream out;
+    gcInitStream(ctx, &out, out_buffer, srcout_size, GC_ENDIAN_BIG);
+    gcStreamWriteStr(&out, fourcc, 4);
+    gcStreamWriteU32(&out, srcout_size);
+    gcStreamWriteU32(&out, linkSecOff);
+    gcStreamWriteU32(&out, chunkSecOff);
+
+    memcpy(OffsetPointer(out_buffer, 0x10), &maskBuffer, maskPtr*sizeof(GCuint32));
+    memcpy(OffsetPointer(out_buffer, linkSecOff), &linkBuffer, linkPtr*sizeof(GCuint16));
+    memcpy(OffsetPointer(out_buffer, chunkSecOff), &chunkBuffer, chunkPtr);
+
+    return compressedSize;
 }
