@@ -163,7 +163,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
             GCarcfile file = arc->files[f]; 
             if(file.attr & 0x01){
                 stringTableSize += strlen(file.name) + 1;
-                fileDataSize += file.size;
+                fileDataSize += padTo32(file.size);
                 stringTableCount++;
             }
         }
@@ -241,7 +241,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
                 gcStreamWriteU32(&fileStream, curFileOffset);
                 gcStreamWriteU32(&fileStream, file.size);
                 memcpy(OffsetPointer(fileDataChunk, curFileOffset), file.data, file.size);
-                curFileOffset += file.size;
+                curFileOffset += padTo32(file.size);
             } else if(file.attr & 0x02){
 
                 //Subdir file entries replace the offset with the index of the dir it points to
