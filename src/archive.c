@@ -267,7 +267,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteStr(&headerStream, "RARC", 4);
     gcStreamWriteU32(&headerStream, archiveSize + stringTableSize + fileDataSize);
     gcStreamWriteU32(&headerStream, 0x20);
-    gcStreamWriteU32(&headerStream, archiveSize + stringTableSize);
+    gcStreamWriteU32(&headerStream, archiveSize + stringTableSize - 0x20);
     gcStreamWriteU32(&headerStream, fileDataSize);
     gcStreamWriteU32(&headerStream, 0); //MRAM, unsupported
     gcStreamWriteU32(&headerStream, 0); //ARAM, unsupported
