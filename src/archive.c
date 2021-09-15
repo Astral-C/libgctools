@@ -238,6 +238,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
             
 
             if(file.attr & 0x01){
+                printf("Writing File %s\n", file.name);
                 gcStreamWriteU32(&fileStream, curFileOffset);
                 gcStreamWriteU32(&fileStream, file.size);
                 memcpy(OffsetPointer(fileDataChunk, curFileOffset), file.data, file.size);
@@ -267,7 +268,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteStr(&headerStream, "RARC", 4);
     gcStreamWriteU32(&headerStream, archiveSize + stringTableSize + fileDataSize);
     gcStreamWriteU32(&headerStream, 0x20);
-    gcStreamWriteU32(&headerStream, padTo32(archiveSize + stringTableSize) - 0x20);
+    gcStreamWriteU32(&headerStream, 0x40A0);//'padTo32(archiveSize + stringTableSize) - 0x20);
     gcStreamWriteU32(&headerStream, fileDataSize);
     gcStreamWriteU32(&headerStream, 0); //MRAM, unsupported
     gcStreamWriteU32(&headerStream, 0); //ARAM, unsupported

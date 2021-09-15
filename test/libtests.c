@@ -17,8 +17,9 @@ int main(int argc, char* argv[]){
 
 	printf("Made using libgctools v%d.%d.%d\n", ctx.major, ctx.minor, ctx.revision);
 
-	FILE* f = fopen("map2.arc", "rb");
-	FILE* fout = fopen("map2.szp", "wb");
+	FILE* f = fopen("map2.szp", "rb");
+	FILE* fout = fopen("map2_new.szp", "wb");
+	FILE* arcOut = fopen("map2.arc", "wb");
 	fseek(f, 0L, SEEK_END);
 	GCsize size = (GCsize)ftell(f);
 	rewind(f);
@@ -27,9 +28,14 @@ int main(int argc, char* argv[]){
 	void* file = malloc(size);
 	fread(file, 1, size, f);
 
+
+	GCsize decompressedSize = gcDecompressedSize(&ctx, file, 0);
+	void* decompressedFile = malloc(decompressedSize);
+	gcYay0Decompress(&ctx, file, decompressedFile, size, 0);
+
 	printf("Initing archive...\n");
 	gcInitArchive(&archive, &ctx);
-	if((err = gcLoadArchive(&archive, file, size)) != GC_ERROR_SUCCESS){
+	if((err = gcLoadArchive(&archive, decompressedFile, decompressedSize)) != GC_ERROR_SUCCESS){
 		printf("Error Loading Archive: %s\n", gcGetErrorMessage(err));
 	}
 
@@ -43,14 +49,17 @@ int main(int argc, char* argv[]){
 	GCsize cmpSize = gcYay0Compress(&ctx, archiveOut, archiveCmp, outSize);
 
 	fwrite(archiveCmp, cmpSize, 1, fout);
+	fwrite(archiveOut, outSize, 1, arcOut);
 
 	gcFreeArchive(&archive);
 	
 	fclose(f);
 	fclose(fout);
+	fclose(arcOut);
 
 	free(archiveOut);
 	free(file);
+	free(decompressedFile);
 	
 	return 0;
 }
