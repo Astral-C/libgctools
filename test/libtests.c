@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
 	fread(file, 1, size, f);
 
 
-	GCsize decompressedSize = gcDecompressedSize(&ctx, file, 0);
+	GCuint32 decompressedSize = gcDecompressedSize(&ctx, file, 0);
 	void* decompressedFile = malloc(decompressedSize);
 	gcYay0Decompress(&ctx, file, decompressedFile, size, 0);
 
