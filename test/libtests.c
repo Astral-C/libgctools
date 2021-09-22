@@ -30,8 +30,12 @@ int main(int argc, char* argv[]){
 
 
 	GCuint32 decompressedSize = gcDecompressedSize(&ctx, file, 0);
-	void* decompressedFile = malloc(decompressedSize);
+	GCuint8* decompressedFile = malloc(decompressedSize);
 	gcYay0Decompress(&ctx, file, decompressedFile, size, 0);
+
+	FILE* decompdOut = fopen("map2_clean.arc", "wb");
+	fwrite(decompressedFile, decompressedSize, 1, decompdOut);
+	fclose(decompdOut);
 
 	printf("Initing archive...\n");
 	gcInitArchive(&archive, &ctx);

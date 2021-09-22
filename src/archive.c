@@ -209,8 +209,11 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
 
         GCuint32 nameOffset = gcStringTableAddr(stringTableChunk, &curStrCount, &curStrTblOffset, dir.name);
 
-        
-        gcStreamWriteStr(&dirStream, dir.name, 4);
+        if(d == 0){
+            gcStreamWriteStr(&dirStream, "ROOT", 4);
+        } else {
+            gcStreamWriteStr(&dirStream, dir.name, 4);
+        }
         gcStreamWriteU32(&dirStream, nameOffset);
         gcStreamWriteU16(&dirStream, gcHashName(dir.name));
         gcStreamWriteU16(&dirStream, dir.filenum);
@@ -279,7 +282,8 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     gcStreamWriteU32(&fileSysStream, 0x20 + (0x10 * arc->dirnum));
     gcStreamWriteU32(&fileSysStream, stringTableSize);
     gcStreamWriteU32(&fileSysStream, archiveSize - 0x20);
-    gcStreamWriteU32(&fileSysStream, curFileIndex);
+    gcStreamWriteU16(&fileSysStream, curFileIndex);
+    gcStreamWriteU8(&fileSysStream, 0);
     gcStreamWriteU8(&fileSysStream, 0);
     gcStreamWriteU32(&fileSysStream, 0);
 
