@@ -161,6 +161,7 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
     // Method adapted from Cuyler36's GCNToolkit.
     // This is a stopgap solution until I can get more knowledgeable about the format and write my own compressor
 
+
     const GCuint32 OFSBITS = 12;
     GCint32 decPtr = 0;
     
@@ -179,11 +180,12 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
     GCint32 chunkPtr = 0, windowPtr = 0, windowLen = 0, length = 0, maxlen = 0;
 
     // Initialize all the buffers with proper size
-    GCuint32 maskBuffer[maskMaxSize >> 2];
-    GCuint16 linkBuffer[linkMaxSize];
-    GCuint8 chunkBuffer[srcout_size];
+    GCuint32* maskBuffer = gcAllocMem(ctx, (maskMaxSize >> 2)*sizeof(GCuint32));
+    GCuint16* linkBuffer = gcAllocMem(ctx, linkMaxSize*sizeof(GCuint16));
+    GCuint8* chunkBuffer = gcAllocMem(ctx, srcout_size);
 
     while(decPtr < srcout_size){
+        printf("%d/%d\r", decPtr, srcout_size);
         if(windowLen >= 1 << OFSBITS){
             windowLen -= (1 << OFSBITS);
             windowPtr = decPtr - windowLen;
@@ -248,6 +250,7 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
 
     GCsize compressedSize = 0x10 + (sizeof(GCuint32) * maskPtr) + (sizeof(GCuint16) * linkPtr) + chunkPtr;
 
+
     const char* fourcc = "Yay0";
     GCuint32 linkSecOff = 0x10 + (sizeof(GCuint32) * maskPtr);
     GCuint32 chunkSecOff = linkSecOff + (sizeof(GCuint16) * linkPtr);
@@ -259,9 +262,13 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
     gcStreamWriteU32(&out, linkSecOff);
     gcStreamWriteU32(&out, chunkSecOff);
 
-    memcpy(OffsetPointer(out_buffer, 0x10), &maskBuffer, maskPtr*sizeof(GCuint32));
-    memcpy(OffsetPointer(out_buffer, linkSecOff), &linkBuffer, linkPtr*sizeof(GCuint16));
-    memcpy(OffsetPointer(out_buffer, chunkSecOff), &chunkBuffer, chunkPtr);
+    memcpy(OffsetPointer(out_buffer, 0x10), maskBuffer, maskPtr*sizeof(GCuint32));
+    memcpy(OffsetPointer(out_buffer, linkSecOff), linkBuffer, linkPtr*sizeof(GCuint16));
+    memcpy(OffsetPointer(out_buffer, chunkSecOff), chunkBuffer, chunkPtr);
+
+    gcFreeMem(ctx, maskBuffer);
+    gcFreeMem(ctx, linkBuffer);
+    gcFreeMem(ctx, chunkBuffer);
 
     return compressedSize;
 }
