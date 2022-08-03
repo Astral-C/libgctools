@@ -18,8 +18,8 @@ int main(int argc, char* argv[]){
 	printf("Made using libgctools v%d.%d.%d\n", ctx.major, ctx.minor, ctx.revision);
 
 	//FILE* fout = fopen("map2_new.szp", "wb");
-	FILE* f = fopen("game_usa.arc", "rb");
-	FILE* arcOut = fopen("game_usa_new.arc", "wb");
+	FILE* f = fopen("map2.arc", "rb");
+	FILE* arcOut = fopen("map2_new.arc", "wb");
 	fseek(f, 0L, SEEK_END);
 	GCsize size = (GCsize)ftell(f);
 	rewind(f);

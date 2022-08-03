@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
 #include "types.h"
 #include "context.h"
 #include "compression.h"
@@ -10,7 +11,7 @@ int main(int argc, char* argv[]){
 	GCerror err;
 	GCcontext ctx;
 
-/*
+
     char* inFile = NULL;
     char* outFile = NULL;
 
@@ -66,7 +67,7 @@ int main(int argc, char* argv[]){
     
     fclose(f);
     fclose(out);
- */   
+   
     return 0;
 
 }
