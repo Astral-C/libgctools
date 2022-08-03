@@ -85,9 +85,11 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
 
     arc->dirnum = dirCount;
     arc->dirs = gcAllocMem(arc->ctx, (sizeof(GCarcdir)*dirCount));
+    memset(arc->dirs, 0, (sizeof(GCarcdir)*dirCount));
 
     arc->filenum = fileCount;
     arc->files = gcAllocMem(arc->ctx, (sizeof(GCarcfile)*fileCount));
+    memset(arc->files, 0, (sizeof(GCarcfile)*fileCount));
 
     arc->stringTable = gcAllocMem(arc->ctx, strSize);
     memcpy(arc->stringTable, OffsetPointer(stream.buffer, strOffset+fsOffset), strSize);
@@ -255,13 +257,17 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
                 GCuint32 dirIndex = 0;
                 
                 if(strcmp(file.name, "..") == 0){
-                    dirIndex = dir.parent - arc->dirs; //get index
+                    if(dir.parent == NULL){
+                        dirIndex = -1;
+                    } else {
+                        dirIndex = dir.parent - arc->dirs; //get index
+                    }
                 } else if(strcmp(file.name, ".") == 0){
                     dirIndex = d;
                 } else {
                     for (GCsize td = 0; td < arc->dirnum; td++){
                         if(file.parent == arc->dirs[td].parent && strcmp(arc->dirs[td].name, file.name) == 0){
-                            dirIndex = (GCuint32)td + 1;
+                            dirIndex = (GCuint32)td;
                             break;
                         }
                     }
