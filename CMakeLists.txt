@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 
 #oof
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -fpermissive -Wall -Wformat-security")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c17 -fpermissive -Wall -Wformat-security -g")
 
 project(gctools)
 
@@ -14,17 +14,8 @@ file(GLOB_RECURSE LIBRARY_SOURCE
 
 add_library(gctools STATIC ${LIBRARY_SOURCE})
 
-add_executable(gctools_test test/libtests.c)
-target_link_libraries(gctools_test gctools)
+add_executable(compressor examples/yay0compressor/main.c)
+add_executable(repack examples/tests/libtests.c)
 
-add_custom_command(
-  OUTPUT gctools_run_tests
-  COMMAND gctools_test
-  COMMENT "Running gctools Library Tests..."
-  VERBATIM
-)
-
-add_custom_target(
-  RunTests ALL
-  DEPENDS gctools_run_tests
-)
+target_link_libraries(compressor gctools)
+target_link_libraries(repack gctools)

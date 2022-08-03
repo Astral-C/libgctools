@@ -9,3 +9,6 @@ test/*.rarc
 test/*.iso
 *.arc
 gctools_test
+*.szp
+repack
+compressor

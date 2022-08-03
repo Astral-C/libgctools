@@ -125,11 +125,16 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
             arc->files[fileIndex].name = (char*)OffsetPointer(arc->stringTable, nameOff);
             gcStreamReadU32(&stream);
             
+            arc->files[fileIndex].parent = &arc->dirs[i];
             if(arc->files[fileIndex].attr & 0x01){
                 arc->files[fileIndex].data = gcAllocMem(arc->ctx, arc->files[fileIndex].size);
                 memcpy(arc->files[fileIndex].data, (GCuint8*)OffsetPointer(stream.buffer, fsOffset + fsSize + start), arc->files[fileIndex].size);
             } else if(arc->files[fileIndex].attr & 0x02) {
+                if(start != -1){
+                    arc->dirs[start].parent = &arc->dirs[i];
+                }
                 arc->files[fileIndex].data = NULL; //No data because were a subdir
+
             }
 
         }        
@@ -250,7 +255,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
                 GCuint32 dirIndex = 0;
 
                 for (GCsize td = 0; td < arc->dirnum; td++){
-                    if(strcmp(arc->dirs[td].name, file.name) == 0){
+                    if(file.parent == arc->dirs[td].parent && strcmp(arc->dirs[td].name, file.name) == 0){
                         dirIndex = (GCuint32)td;
                     }
                 }

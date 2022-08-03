@@ -46,6 +46,7 @@ struct GCarcdir {
 	char * name; // name of the archive. pointer is managed by the GCarchive.
 	GCsize fileoff; // index of first file in the directory
 	GCsize filenum; // number of files in the directory
+	GCuint16 id;
 
 	// ...
 
