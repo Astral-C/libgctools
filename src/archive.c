@@ -130,7 +130,7 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
                 arc->files[fileIndex].data = gcAllocMem(arc->ctx, arc->files[fileIndex].size);
                 memcpy(arc->files[fileIndex].data, (GCuint8*)OffsetPointer(stream.buffer, fsOffset + fsSize + start), arc->files[fileIndex].size);
             } else if(arc->files[fileIndex].attr & 0x02) {
-                if(start != -1){
+                if(start != -1 && strcmp(arc->files[fileIndex].name, "..") != 0 && strcmp(arc->files[fileIndex].name, ".") != 0){
                     arc->dirs[start].parent = &arc->dirs[i];
                 }
                 arc->files[fileIndex].data = NULL; //No data because were a subdir
@@ -253,10 +253,17 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
 
                 //Subdir file entries replace the offset with the index of the dir it points to
                 GCuint32 dirIndex = 0;
-
-                for (GCsize td = 0; td < arc->dirnum; td++){
-                    if(file.parent == arc->dirs[td].parent && strcmp(arc->dirs[td].name, file.name) == 0){
-                        dirIndex = (GCuint32)td;
+                
+                if(strcmp(file.name, "..") == 0){
+                    dirIndex = dir.parent - arc->dirs; //get index
+                } else if(strcmp(file.name, ".") == 0){
+                    dirIndex = d;
+                } else {
+                    for (GCsize td = 0; td < arc->dirnum; td++){
+                        if(file.parent == arc->dirs[td].parent && strcmp(arc->dirs[td].name, file.name) == 0){
+                            dirIndex = (GCuint32)td + 1;
+                            break;
+                        }
                     }
                 }
 
