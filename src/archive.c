@@ -220,13 +220,11 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
             gcStreamWriteStr(&dirStream, "ROOT", 4);
         } else {
             char temp[4];
+            memset(temp, 0x20, sizeof(temp));
             GCsize dirNameLen = strlen(dir.name);
-            for (size_t ch = 0; ch < 4; ch++){
-                if(ch >= dirNameLen){
-                    temp[ch] = " ";
-                } else {
-                    temp[ch] = toupper(dir.name[ch]);
-                }
+            for (size_t ch = 0; ch < dirNameLen; ch++){
+                if(ch == 4) break;
+                temp[ch] = toupper(dir.name[ch]);
             }
             
             gcStreamWriteStr(&dirStream, temp, 4);
