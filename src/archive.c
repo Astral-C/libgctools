@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <string.h>
 #include <assert.h>
 #include "../include/types.h"
@@ -10,16 +11,10 @@
 GCuint16 gcHashName(const char* str){
     GCuint16 hash = 0;
 
-    GCuint16 multiplyer = 1;
-    if(strlen(str) + 1 == 2){
-        multiplyer = 2;
-    } else if(strlen(str) + 1 >= 3){
-        multiplyer = 3;
-    }
-
     for (size_t i = 0; i < strlen(str); i++){
-        hash = (GCuint16)(hash * multiplyer);
+        hash = (GCuint16)(hash * 3);
         hash += (GCuint16)str[i];
+        hash &= 0xFFFF;
     }
 
     return hash;
@@ -53,6 +48,10 @@ GCerror gcInitArchive(GCarchive * arc, const GCcontext * ctx){
     arc->filenum = 0;
     arc->dirs = NULL;
     arc->files = NULL;
+}
+
+int dircmp(const void* a, const void* b){
+    return strcmp(((GCarcdir*)a)->name, ((GCarcdir*)b)->name);
 }
 
 GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
@@ -143,7 +142,8 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
 
         gcStreamSeek(&stream, pos, 0);
     }
-    
+
+    //qsort(arc->dirs + 1, arc->dirnum - 1, sizeof(GCarcdir), dircmp);
 
     return GC_ERROR_SUCCESS;
 }
@@ -219,8 +219,19 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
         if(d == 0){
             gcStreamWriteStr(&dirStream, "ROOT", 4);
         } else {
-            gcStreamWriteStr(&dirStream, dir.name, 4);
+            char temp[4];
+            GCsize dirNameLen = strlen(dir.name);
+            for (size_t ch = 0; ch < 4; ch++){
+                if(ch >= dirNameLen){
+                    temp[ch] = " ";
+                } else {
+                    temp[ch] = toupper(dir.name[ch]);
+                }
+            }
+            
+            gcStreamWriteStr(&dirStream, temp, 4);
         }
+
         gcStreamWriteU32(&dirStream, nameOffset);
         gcStreamWriteU16(&dirStream, gcHashName(dir.name));
         gcStreamWriteU16(&dirStream, dir.filenum);
