@@ -14,8 +14,8 @@ file(GLOB_RECURSE LIBRARY_SOURCE
 
 add_library(gctools STATIC ${LIBRARY_SOURCE})
 
-add_executable(compressor examples/yay0compressor/main.c)
-add_executable(repack examples/tests/libtests.c)
+#add_executable(compressor examples/yay0compressor/main.c)
+#add_executable(repack examples/tests/libtests.c)
 
-target_link_libraries(compressor gctools)
-target_link_libraries(repack gctools)
+#target_link_libraries(compressor gctools)
+#target_link_libraries(repack gctools)
