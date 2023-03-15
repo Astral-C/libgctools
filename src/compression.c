@@ -6,66 +6,50 @@ GCuint32 gcDecompressedSize(GCcontext* ctx, GCuint8* src_data, GCuint32 offset){
 }
 
 void gcYaz0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsize length, GCuint32 offset){
-    GCuint32 count = 0, decompressedSize, bits;
+    GCuint32 count = 0, src_pos = 0, dst_pos = 0;
+    GCuint8 bits;
 
-    GCuint8* endptr = OffsetPointer(dst_data, gcDecompressedSize(ctx, src_data, offset));
-    
-    src_data += 16;
-
-    do {
+    src_pos = 16;
+    while(dst_pos < length) {
         if(count == 0){
-            bits = *src_data++;
+            bits = src_data[src_pos];
+            ++src_pos;
             count = 8;
         }
         
-        if(bits & 0x80){
-            if(offset == 0){
-                --length;
-                *dst_data++ = *src_data;
-                
-                if(length == 0){
-                    return;
-                }
-            } else {
-                --offset;
-            }
-            
-            ++src_data;
+        if((bits & 0x80) != 0){
+            dst_data[dst_pos] = src_data[src_pos];
+            dst_pos++;
+            src_pos++;
 
         } else {
-            int offset = ((src_data[0] & 0xF) << 8) | src_data[1];
+            GCuint8 b1 = src_data[src_pos], b2 = src_data[src_pos + 1];
 
-            int length = (src_data[0] >> 4);
-            src_data += 2;
-            GCuint8* ref_data = (dst_data - offset - 1);
+            GCuint32 len = b1 >> 4;
+            GCuint32 dist = ((b1 & 0xF) << 8) | b2;
+            GCuint32 copy_src = dst_pos - (dist + 1);
 
-            if(length == 0){
-                length = (*src_data + 18);
-                ++src_data;
+            src_pos += 2;
+
+            if(len == 0){
+                len = src_data[src_pos] + 0x12;
+                src_pos++;
             } else {
-                length += 2;
+                len += 2;
             }
 
-            do {
-                if(offset == 0){
-                    *dst_data++ = *ref_data;
-                    --length;
-
-                    if(length == 0){
-                        return;
-                    }
-                } else {
-                    --offset;
-                }
-
-                --length;
-                ++ref_data;
-            } while(length != 0);
+            for (GCsize i = 0; i < len; ++i)
+            {
+                dst_data[dst_pos] = dst_data[copy_src];
+                copy_src++;
+                dst_pos++;
+            }
+            
         }
         
         bits <<= 1;
         --count;
-    } while(dst_data != endptr);
+    }
 }
 
 void gcYay0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsize length, GCuint32 offset){
@@ -185,7 +169,6 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
     GCuint8* chunkBuffer = gcAllocMem(ctx, srcout_size);
 
     while(decPtr < srcout_size){
-        printf("%d/%d\r", decPtr, srcout_size);
         if(windowLen >= 1 << OFSBITS){
             windowLen -= (1 << OFSBITS);
             windowPtr = decPtr - windowLen;
