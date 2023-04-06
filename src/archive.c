@@ -134,6 +134,7 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
                 if(start != -1 && strcmp(arc->files[fileIndex].name, "..") != 0 && strcmp(arc->files[fileIndex].name, ".") != 0){
                     arc->dirs[start].parent = &arc->dirs[i];
                 }
+                arc->files[fileIndex].size = start; // Make our directory index available somehow
                 arc->files[fileIndex].data = NULL; //No data because were a subdir
 
             }
