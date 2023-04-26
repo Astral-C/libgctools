@@ -96,6 +96,9 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz);
 // if a pointer is provided, it will generate an archive file into that memory block
 GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr);
 
+// replaces the file data for a given file
+GCerror gcReplaceFileData(GCarcfile * file, const GCuint8* ptr, GCsize sz);
+
 // -------------------------------------------------------------------------- //
 
 #ifdef __cplusplus

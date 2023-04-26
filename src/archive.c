@@ -317,6 +317,24 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
 
 }
 
+GCerror gcReplaceFileData(GCarcfile * file, const GCuint8* ptr, GCsize sz){
+	//allocate size of new file
+	uint8_t* newFileData = (uint8_t*)gcAllocMem(file->arc->ctx, sz);
+	memcpy(newFileData, ptr, sz);
+	
+    if(file->data != NULL){
+	    gcFreeMem(file->arc->ctx, file->data);
+    }
+    
+	//copy new jmp to file buffer for arc
+	file->data = newFileData;
+
+	//set size properly
+	file->size = sz;
+
+    return GC_ERROR_SUCCESS;
+}
+
 GCerror gcFreeArchive(GCarchive * arc){
     for (size_t f = 0; f < arc->filenum; f++){
         if(arc->files[f].data != NULL){
