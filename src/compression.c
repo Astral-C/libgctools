@@ -68,7 +68,7 @@ void gcYay0Decompress(GCcontext* ctx, GCuint8* src_data, GCuint8* dst_data, GCsi
     }
 
     GCuint8* read_dst = dst_data;
-    GCuint8* read_src = OffsetPointer(src_data, read_offset);
+    GCuint8* read_src = GCOffsetPointer(src_data, read_offset);
 
     do {
         if(bit_count == 0){
@@ -245,9 +245,9 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
     gcStreamWriteU32(&out, linkSecOff);
     gcStreamWriteU32(&out, chunkSecOff);
 
-    memcpy(OffsetPointer(out_buffer, 0x10), maskBuffer, maskPtr*sizeof(GCuint32));
-    memcpy(OffsetPointer(out_buffer, linkSecOff), linkBuffer, linkPtr*sizeof(GCuint16));
-    memcpy(OffsetPointer(out_buffer, chunkSecOff), chunkBuffer, chunkPtr);
+    memcpy(GCOffsetPointer(out_buffer, 0x10), maskBuffer, maskPtr*sizeof(GCuint32));
+    memcpy(GCOffsetPointer(out_buffer, linkSecOff), linkBuffer, linkPtr*sizeof(GCuint16));
+    memcpy(GCOffsetPointer(out_buffer, chunkSecOff), chunkBuffer, chunkPtr);
 
     gcFreeMem(ctx, maskBuffer);
     gcFreeMem(ctx, linkBuffer);

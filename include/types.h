@@ -5,7 +5,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#define OffsetPointer(ptr, offset) ((void*)((char *)(ptr) + (offset)))
+#define GCOffsetPointer(ptr, offset) ((void*)((char *)(ptr) + (offset)))
 
 #ifdef __cplusplus
 extern "C" {

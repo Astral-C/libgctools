@@ -25,16 +25,16 @@ GCuint32 gcStringTableAddr(GCuint8* stringTableChunk, GCuint32* curStrCount, GCu
     
     GCuint32 offset = 0;
     for(int s = 0; s < *curStrCount; s++){
-        if(strcmp(OffsetPointer(stringTableChunk, offset), str) == 0){
+        if(strcmp(GCOffsetPointer(stringTableChunk, offset), str) == 0){
             nameOffset = offset;
             break;
         }
-        offset += strlen(OffsetPointer(stringTableChunk, offset))+1;
+        offset += strlen(GCOffsetPointer(stringTableChunk, offset))+1;
     }
 
     if(nameOffset == 0){
         nameOffset = *curStrTblOffset;
-        strncpy(OffsetPointer(stringTableChunk, nameOffset), str, strlen(str)+1);
+        strncpy(GCOffsetPointer(stringTableChunk, nameOffset), str, strlen(str)+1);
         *curStrTblOffset += strlen(str)+1;
         *curStrCount += 1;
     }
@@ -91,7 +91,7 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
     memset(arc->files, 0, (sizeof(GCarcfile)*fileCount));
 
     arc->stringTable = gcAllocMem(arc->ctx, strSize);
-    memcpy(arc->stringTable, OffsetPointer(stream.buffer, strOffset+fsOffset), strSize);
+    memcpy(arc->stringTable, GCOffsetPointer(stream.buffer, strOffset+fsOffset), strSize);
 
     gcStreamSeek(&stream, dirOffset, fsOffset);
     
@@ -106,7 +106,7 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
 
         arc->dirs[i].filenum = gcStreamReadU16(&stream);
         arc->dirs[i].fileoff = gcStreamReadU32(&stream);
-        arc->dirs[i].name = (char*)OffsetPointer(arc->stringTable, nameOff);
+        arc->dirs[i].name = (char*)GCOffsetPointer(arc->stringTable, nameOff);
 
         size_t pos = stream.position;
         gcStreamSeek(&stream, fileOffset+(arc->dirs[i].fileoff*20), fsOffset);
@@ -123,13 +123,13 @@ GCerror gcLoadArchive(GCarchive * arc, const void * ptr, GCsize sz){
             arc->files[fileIndex].attr = (fileAttrs >> 24) & 0xFF;
             GCuint32 start = gcStreamReadU32(&stream);
             arc->files[fileIndex].size = gcStreamReadU32(&stream);
-            arc->files[fileIndex].name = (char*)OffsetPointer(arc->stringTable, nameOff);
+            arc->files[fileIndex].name = (char*)GCOffsetPointer(arc->stringTable, nameOff);
             gcStreamReadU32(&stream);
             
             arc->files[fileIndex].parent = &arc->dirs[i];
             if(arc->files[fileIndex].attr & 0x01){
                 arc->files[fileIndex].data = gcAllocMem(arc->ctx, arc->files[fileIndex].size);
-                memcpy(arc->files[fileIndex].data, (GCuint8*)OffsetPointer(stream.buffer, fsOffset + fsSize + start), arc->files[fileIndex].size);
+                memcpy(arc->files[fileIndex].data, (GCuint8*)GCOffsetPointer(stream.buffer, fsOffset + fsSize + start), arc->files[fileIndex].size);
             } else if(arc->files[fileIndex].attr & 0x02) {
                 if(start != -1 && strcmp(arc->files[fileIndex].name, "..") != 0 && strcmp(arc->files[fileIndex].name, ".") != 0){
                     arc->dirs[start].parent = &arc->dirs[i];
@@ -184,18 +184,18 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
     if(ptr == NULL) return padTo32(archiveSize + stringTableSize + fileDataSize);
     
     //Get pointers to each chunk of the file so we can generate offsets and indices as we go
-    GCuint8* dirChunk = OffsetPointer(ptr, 0x40);
-    GCuint8* fileChunk = OffsetPointer(ptr, 0x40 + (arc->dirnum * 0x10));
-    GCuint8* fileDataChunk = OffsetPointer(ptr, padTo32(archiveSize + stringTableSize));
+    GCuint8* dirChunk = GCOffsetPointer(ptr, 0x40);
+    GCuint8* fileChunk = GCOffsetPointer(ptr, 0x40 + (arc->dirnum * 0x10));
+    GCuint8* fileDataChunk = GCOffsetPointer(ptr, padTo32(archiveSize + stringTableSize));
     //Even though we won't be doing anything with this until we've generated the string table, still generate the pointer to it now
-    GCuint8* stringTableChunk = OffsetPointer(ptr, archiveSize);
+    GCuint8* stringTableChunk = GCOffsetPointer(ptr, archiveSize);
 
     //Ensure that this buffer is empty before we write to it
     memset((void*)ptr, 0, archiveSize + stringTableSize + fileDataSize);
 
     //Initialize the write streams for the different file segments
     gcInitStream(arc->ctx, &headerStream, ptr, 0x20, GC_ENDIAN_BIG);
-    gcInitStream(arc->ctx, &fileSysStream, OffsetPointer(ptr, 0x20), 0x20, GC_ENDIAN_BIG);
+    gcInitStream(arc->ctx, &fileSysStream, GCOffsetPointer(ptr, 0x20), 0x20, GC_ENDIAN_BIG);
     gcInitStream(arc->ctx, &dirStream, dirChunk, (arc->dirnum * 0x10), GC_ENDIAN_BIG);
     gcInitStream(arc->ctx, &fileStream, fileChunk, (arc->filenum * 0x14), GC_ENDIAN_BIG);
 
@@ -258,7 +258,7 @@ GCsize gcSaveArchive(GCarchive * arc, const GCuint8* ptr){
             if(file.attr & 0x01){
                 gcStreamWriteU32(&fileStream, curFileOffset);
                 gcStreamWriteU32(&fileStream, file.size);
-                memcpy(OffsetPointer(fileDataChunk, curFileOffset), file.data, file.size);
+                memcpy(GCOffsetPointer(fileDataChunk, curFileOffset), file.data, file.size);
 
                 curFileOffset += padTo32(file.size);
             } else if(file.attr & 0x02){
