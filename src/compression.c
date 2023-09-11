@@ -255,3 +255,94 @@ GCsize gcYay0Compress(GCcontext* ctx, GCuint8* src_data, GCuint8* out_buffer, GC
 
     return compressedSize;
 }
+
+// Compresses a file into a buffer and returns the compressed data. Use `dstout_size` to know the compressed data's size.
+// `level` denotes the compression level: 0 for none, 9 for best.
+GCuint8* gcYaz0Compress(GCcontext* ctx, GCuint8* src_data, GCsize srcout_size, GCsize* dstout_size, GCuint8 level) {
+    GCuint8* dataptr = src_data;
+    GCsize maxbacklevel = 0x10e0ULL * (level / 9.0) - 0x0e0ULL;
+    // Calculation for result pointer's size.
+    GCsize length = srcout_size + srcout_size / 8 + 0x10;
+    GCuint8* result = (GCuint8*)gcAllocMem(ctx, length);
+    // First 16 bytes will be written by the GCstream.
+    GCuint8* resultptr = &result[16];
+    GCstream* stream = (GCstream*)gcAllocMem(ctx, sizeof(GCstream));
+    gcInitStream(ctx, stream, result, length, GC_ENDIAN_BIG);
+    gcStreamWriteStr(stream, "Yaz0", 4);
+    gcStreamWriteU32(stream, srcout_size);
+    // Last 8 bytes of header are unknown.
+    gcStreamWriteU32(stream, 0);
+    gcStreamWriteU32(stream, 0);
+    gcFreeMem(ctx, stream);
+    GCsize dstoffs = 16;
+    GCsize offs = 0;
+    while (1) {
+        GCsize headeroffs = dstoffs++;
+        resultptr++;
+        GCuint8 header = 0;
+        for (int i = 0; i < 8; i++) {
+            GCuint8 comp = 0;
+            ptrdiff_t back = 1;
+            GCsize nr = 2;
+            GCuint8* ptr = dataptr - 1;
+            GCsize maxnum = 0x111;
+            if (length - offs < maxnum) maxnum = length - offs;
+            GCsize maxback = maxbacklevel;
+            if (offs < maxback) maxback = offs;
+            maxback = ((GCsize)dataptr) - maxback;
+            GCsize tmpnr = 0;
+            while (maxback <= (GCsize)(ptr)) {
+                if (*(GCuint16*)ptr == *(GCuint16*)dataptr && ptr[2] == dataptr[2]) {
+                    tmpnr = 3;
+                    while(tmpnr < maxnum && ptr[tmpnr] == dataptr[tmpnr]) tmpnr++;
+                    if (tmpnr > nr) {
+                        if (offs + tmpnr > length) {
+                            nr = length - offs;
+                            back = (ptrdiff_t)(dataptr - ptr);
+                            break;
+                        }
+                        nr = tmpnr;
+                        back = (ptrdiff_t)(dataptr - ptr);
+                        if (nr == maxback) break;
+                    }
+                }
+                --ptr;
+            }
+            if (nr > 2) {
+                offs += nr;
+                dataptr += nr;
+                if (nr >= 0x12) {
+                    *resultptr++ = (GCuint8)(((back - 1) >> 8) & 0xF);
+                    *resultptr++ = (GCuint8)((back - 1) & 0xFF);
+                    *resultptr++ = (GCuint8)((nr - 0x12) & 0xFF);
+                    dstoffs += 3;
+                } else {
+                    *resultptr++ = (GCuint8)((((back - 1) >> 8) & 0xF) | (((nr - 2) & 0xF) << 4));
+                    *resultptr++ = (GCuint8)((back - 1) & 0xFF);
+                    dstoffs += 2;
+                }
+                comp = 1;
+            }
+            else {
+                *resultptr++ = *dataptr++;
+                dstoffs++;
+                offs++;
+            }
+            header = (GCuint8)((header << 1) | ((comp == 1) ? 0 : 1));
+            if (offs >= length) {
+                header = (GCuint8)(header << (7 - i));
+                break;
+            }
+        }
+        result[headeroffs] = header;
+        if (offs >= length) break;
+    }
+    // dstoffs should be >= length once this is run
+    while ((dstoffs % 4) != 0) dstoffs++;
+    GCuint8* realresult = gcAllocMem(ctx, dstoffs);
+    memset(realresult, 0, dstoffs);
+    memcpy(realresult, result, dstoffs);
+    gcFreeMem(ctx, result);
+    *dstout_size = dstoffs;
+    return realresult;
+}
